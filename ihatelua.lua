@@ -1,4 +1,4 @@
-local inspect = function(root) return require('inspect')(root, { indent = "   |" }) end;
+local inspect = function(root, depth) return require('inspect')(root, { indent = "   |", depth = depth }) end;
 
 -- Lua Functions ----------------------------------------
 local getmetatable, setmetatable = getmetatable, setmetatable;
@@ -11,7 +11,7 @@ local tostring = tostring;
 ---@param table table
 ---@return string
 local function getTableID(table)
-    local r = tostring(table):gsub("table: ", "", 1);;
+    local r = tostring(table):gsub("table: ", "", 1);
     return r;
 end;
 
@@ -30,15 +30,18 @@ local Object_MetaFactory = {};
 ---@param meta? UserMeta @A table of metamethods to use for this class and its instances.
 ---@return O
 function Object:Extend(name, meta)
-
-
-
-
     name, meta = name or "", meta or {};
 
+    local class = {};
+    local classID = getTableID(class);
+    local classMeta = Object_MetaFactory.createClass(self, name == "" and classID or name, meta);
 
+    -- Initialise the class.
+    classMeta.__id = classID;
+    classMeta.__static = Object_MetaFactory.createStaticEnv(class);
+    classMeta.__index = setmetatable({ super = classMeta.__super; static = classMeta.__static }, { __index = classMeta.__super });
 
-    return nil;
+    return setmetatable(class, classMeta);
 end;
 
 ---Get the type of the object; otherwise known as the class.  
@@ -81,7 +84,7 @@ setmetatable(Object, Object_Meta);
 
 -- Factory ----------------------------------------------
 
---Writes to the class table instead, when 'Class.static' is used.
+--Writes to the class table, when 'Class.static' is used.
 Object_MetaFactory.StaticWriter = function(env, key, value)
     rawset(getmetatable(env)['__class'], key, value);
 end;
@@ -96,7 +99,7 @@ function Object_MetaFactory.createStaticEnv(class)
     return setmetatable(env, meta);
 end;
 
--- -- -- -- Class -- -- -- --
+-- -- -- Class -- -- -- -- --
 
 Object_MetaFactory.Class__constructor = function() return {} end;
 
@@ -111,33 +114,57 @@ Object_MetaFactory.Class__newindex = function(class, key, value)
     end
 
     -- Anything that isn't the constructor is assumed to be an instance field/method.
-    getmetatable(class)[type(value) == 'function' and '__iMethods' or '__iFields'] = value;
+    getmetatable(class)[type(value) == 'function' and '__iMethods' or '__iFields'][key] = value;
 end;
 
 function Object_MetaFactory.createClass(parent, name, meta)
     return {
         __isClass       = true;
+
+        __id            = nil; -- Set during class initialisation.
         __type          = name;
         __super         = parent;
         __constructor   = Object_MetaFactory.Class__constructor; -- Default constructor.
 
-        -- Instance stuff -- --
+        -- -- -- -- -- -- -- --
+        __static        = nil; -- Set during class initialisation.
         __iFields       = {};
         __iMethods      = setmetatable({}, { __index = getmetatable(parent)['__iMethods'] });
-        -- -- -- -- --- -- ----
+        -- -- -- -- -- -- -- --
 
         -- UserMeta -- -- -- --
+        __tostring      = meta.__tostring or getmetatable(parent).__tostring;
+        __concat        = meta.__concat or getmetatable(parent).__concat;
         ---@TODO zug zug
         -- -- -- -- -- -- -- --
 
-        --__static -- Set during class initialisation.
-        --__index -- Set during class initialisation.
-        __newindex      = Object_MetaFactory.Class__newindex.Class__newindex;
+        __index         = nil; -- Set during class initialisation.
+        __newindex      = Object_MetaFactory.Class__newindex;
     }
+end;
+
+-- -- -- Instance -- -- -- -- --
+
+function Object_MetaFactory.createInstance(parentClass, parentInstance)
 end;
 
 ---------------------------------------------------------
 
 
 
+local Class1 = Object:Extend("");
+Class1.static.foo = "bar";
+local Class2 = Class1:Extend("Class2");
+local Class3 = Class2:Extend("Class3");
+
+print("\n------------------------------------------------------------\n");
+
+print(inspect(Class1, 3));
+
+print("\n------------------------------------------------------------\n");
+
+print("Class1.foo: " .. Class1.foo);
+print("Class3.foo: " .. Class3.foo);
+
+print("\n------------------------------------------------------------\n");
 
