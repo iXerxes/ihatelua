@@ -129,7 +129,7 @@ function Object_MetaFactory.createClass(parent, name, meta)
         -- -- -- -- -- -- -- --
         __static        = nil; -- Set during class initialisation.
         __iFields       = {};
-        __iMethods      = setmetatable({}, { __index = parent == Object and Object or getmetatable(parent)['__iMethods'] });
+        __iMethods      = {};
         -- -- -- -- -- -- -- --
 
         -- UserMeta -- -- -- --
@@ -146,19 +146,40 @@ end;
 -- -- -- Instance -- -- -- -- --
 
 Object_MetaFactory.Instance__index = function(instance, key)
-    local originalInstance = instance;
+    if (key == 'class') then return getmetatable(instance)['__class'] end;
+    if (key == 'super') then return getmetatable(instance)['__super'] end;
+
+    local iMethod = getmetatable(instance.class)['__iMethods'][key]; -- Check the table of instance methods.
+    if (iMethod) then return iMethod end;
 
     -- Crawl the inheritance chain, indexing each parent and its instance methods.
     instance = instance.super;
-    while instance ~= Object do
-        -- instance methods
-        -- parent
+    while instance do
+        local iField = rawget(instance, key); if (iField) then return iField end; -- Check the instance for the field.
+        iMethod = getmetatable(instance.class)['__iMethods'][key]; if (iField) then return iField end; -- Check the class for instance methods.
         instance = instance.super;
     end;
 
-    -- Index the 
-    return 
+    return nil;
+end;
 
+Object_MetaFactory.Instance__newindex = function(instance, key, value)
+    if (key == 'class' or key == 'super') then error(string.format("Cannot assign reserved keyword '%s' in instance '%s'.", key, Object.type(instance)), 2) end;
+
+    -- Don't redefine inherited instance methods. Just override them.
+    if (type(value) == 'function') then rawset(instance, key, value) end;
+
+    -- Find any inherited fields and redefine them.
+    local oi = instance; instance = instance.super;
+    while instance do
+        local iField = rawget(instance, key);
+        if (iField) then rawset(instance, key, value); return end;
+        instance = instance.super;
+    end;
+
+    -- No field by this name was inherited. Set the key in the original instance.
+    rawset(oi, key, value);
+    return;
 end;
 
 function Object_MetaFactory.createInstance(parentClass, parentInstance)
@@ -167,6 +188,7 @@ function Object_MetaFactory.createInstance(parentClass, parentInstance)
 
         __id            = nil; -- Set during instance initialisation.
         __type          = getmetatable(parentClass)['__type'];
+        __class         = parentClass;
         __super         = parentInstance;
 
         -- UserMeta -- -- -- --
@@ -175,7 +197,8 @@ function Object_MetaFactory.createInstance(parentClass, parentInstance)
         ---@TODO zug zug
         -- -- -- -- -- -- -- --
 
-        __index = 
+        __index         = Object_MetaFactory.Instance__index;
+        __newIndex      = Object_MetaFactory.Instance__newindex;
     }
 end;
 
