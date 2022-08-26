@@ -17,6 +17,9 @@ end;
 
 
 ---@class Object
+---@field super nil|Object @A reference to the parent class or instance.
+---@field static table @A reference to the proxy for static definitions. Only accessible from a class.
+---@field class nil|Object @A reference to the parent class of an instance. Only accessible from an instace.
 local Object = {};
 local Object_Meta = { __type = "$Object" };
 local Object_MetaFactory = {};
@@ -44,6 +47,15 @@ function Object:Extend(name, meta)
     return setmetatable(class, classMeta);
 end;
 
+---Get the unique ID of the object. The is the table ID of the top-most table that represents the object.  
+---If no ID is found, the object is considered invalid, and `nil` is returned.
+---@param self Object
+---@return nil|string
+function Object:id()
+    local mt = getmetatable(self);
+    return (mt and mt['__id']) or nil;
+end;
+
 ---Get the type of the object; otherwise known as the class.  
 ---If no type is found, the object is considered invalid, and `nil` is returned.
 ---@param self Object
@@ -66,6 +78,21 @@ function Object:isInstance()
     local mt = getmetatable(self);
     return (mt and mt['__isInstance']) or false;
 end;
+
+---Check if an object is an instance of another object.
+---`Class:instanceOf(instance)` will always return false.
+---@param object any
+---@return boolean
+function Object:instanceOf(object)
+    local objectID = Object.id(getmetatable((Object.isClass(object) and object or object.class)));
+    local class = Object.isClass(self) and self or getmetatable(self)['__class'];
+    while class do
+        if (Object.id(class) == objectID) then return true end;
+        class = class.super;
+    end
+    return false;
+end;
+
 ---------------------------------------------------------
 
 
