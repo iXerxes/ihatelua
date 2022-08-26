@@ -129,7 +129,7 @@ function Object_MetaFactory.createClass(parent, name, meta)
         -- -- -- -- -- -- -- --
         __static        = nil; -- Set during class initialisation.
         __iFields       = {};
-        __iMethods      = setmetatable({}, { __index = getmetatable(parent)['__iMethods'] });
+        __iMethods      = setmetatable({}, { __index = parent == Object and Object or getmetatable(parent)['__iMethods'] });
         -- -- -- -- -- -- -- --
 
         -- UserMeta -- -- -- --
@@ -145,7 +145,38 @@ end;
 
 -- -- -- Instance -- -- -- -- --
 
+Object_MetaFactory.Instance__index = function(instance, key)
+    local originalInstance = instance;
+
+    -- Crawl the inheritance chain, indexing each parent and its instance methods.
+    instance = instance.super;
+    while instance ~= Object do
+        -- instance methods
+        -- parent
+        instance = instance.super;
+    end;
+
+    -- Index the 
+    return 
+
+end;
+
 function Object_MetaFactory.createInstance(parentClass, parentInstance)
+    return {
+        __isInstance    = true;
+
+        __id            = nil; -- Set during instance initialisation.
+        __type          = getmetatable(parentClass)['__type'];
+        __super         = parentInstance;
+
+        -- UserMeta -- -- -- --
+        __tostring      = getmetatable(parentClass)['__tostring'];
+        __concat        = getmetatable(parentClass)['__concat'];
+        ---@TODO zug zug
+        -- -- -- -- -- -- -- --
+
+        __index = 
+    }
 end;
 
 ---------------------------------------------------------
