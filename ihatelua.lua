@@ -26,6 +26,7 @@ local Object_MetaFactory = {};
 
 
 -- Global Functions -------------------------------------
+
 ---Create a new class, extending another.
 ---@generic O, T:Object
 ---@param self T
@@ -80,16 +81,20 @@ function Object:isInstance()
 end;
 
 ---Check if an object is an instance of another object.
----`Class:instanceOf(instance)` will always return false.
----@param object any
+---@param self Object
+---@param object Object
 ---@return boolean
 function Object:instanceOf(object)
-    local objectID = Object.id(getmetatable((Object.isClass(object) and object or object.class)));
-    local class = Object.isClass(self) and self or getmetatable(self)['__class'];
+    if (Object.id(self) == nil or Object.id(object) == nil) then error("Both arguments for 'instanceOf' must extend Object.", 2) end;
+    if (Object.isClass(self) and Object.isInstance(object)) then error("A class (arg #1) cannot be an instance of an instance (arg #2).", 2) end;
+
+    local targetID = getmetatable(Object.isClass(object) and object or object.class)['__id'];
+    local class = Object.isClass(self) and self or self.class;
     while class do
-        if (Object.id(class) == objectID) then return true end;
+        if (getmetatable(class)['__id'] == targetID) then return true end;
         class = class.super;
-    end
+    end;
+
     return false;
 end;
 
@@ -144,6 +149,24 @@ Object_MetaFactory.Class__newindex = function(class, key, value)
     getmetatable(class)[type(value) == 'function' and '__iMethods' or '__iFields'][key] = value;
 end;
 
+Object_MetaFactory.Class__call = function(class, ...)
+    local newInstance, parentInstance = getmetatable(class)['__constructor'](class, ...);
+    if (type(newInstance) ~= 'table') then error(string.format("Class constructor '%s' must return a table for value #1. Actual type: '%s'.", Object.type(class), type(newInstance)), 2) end;
+    
+    if (parentInstance ~= nil) then
+        if (type(parentInstance) ~= 'table') then error(string.format("Class constructor '%s' must return a table or nil for value #2. Actual type: '%s'.", Object.type(class), type(parentInstance)), 2) end;
+        if (not (Object.id(parentInstance) and Object.isClass(parentInstance))) then error(string.format("The parent value returned in class constructor '%s' must extend Object and be an instance of a class."), 2) end;
+    end
+
+    parentInstance = parentInstance or (class.super ~= Object and class.super(...) or nil);
+    local instanceMeta = Object_MetaFactory.createInstance(class, parentInstance);
+
+    instanceMeta.__id = getTableID(parentInstance);
+    for key, value in pairs(getmetatable(class)['__iFields']) do newInstance[key] = value end; -- Copy all instance fields into the new instance table.
+
+    return setmetatable(newInstance, instanceMeta);
+end;
+
 function Object_MetaFactory.createClass(parent, name, meta)
     return {
         __isClass       = true;
@@ -167,6 +190,7 @@ function Object_MetaFactory.createClass(parent, name, meta)
 
         __index         = nil; -- Set during class initialisation.
         __newindex      = Object_MetaFactory.Class__newindex;
+        __call          = Object_MetaFactory.Class__call;
     }
 end;
 
@@ -187,7 +211,7 @@ Object_MetaFactory.Instance__index = function(instance, key)
         instance = instance.super;
     end;
 
-    return nil;
+    return Object[key];
 end;
 
 Object_MetaFactory.Instance__newindex = function(instance, key, value)
@@ -233,19 +257,43 @@ end;
 
 
 
-local Class1 = Object:Extend("");
-Class1.static.foo = "bar";
-local Class2 = Class1:Extend("Class2");
-local Class3 = Class2:Extend("Class3");
+-- local Class1 = Object:Extend("");
+-- Class1.foo = "sadas";
+-- function Class1.static:blah() end;
+-- Class1.static.foo = "bar";
+-- local Class2 = Class1:Extend("Class2");
+-- local Class3 = Class2:Extend("Class3");
 
-print("\n------------------------------------------------------------\n");
+-- local Class1Ins = Class1();
+-- local Class3Ins = Class3();
+-- Class3Ins.foo = "override";
 
-print(inspect(Class1, 3));
+-- print("\n------------------------------------------------------------\n");
 
-print("\n------------------------------------------------------------\n");
+-- print(inspect(Class1, 3));
 
-print("Class1.foo: " .. Class1.foo);
-print("Class3.foo: " .. Class3.foo);
+-- print("\n------------------------------------------------------------\n");
 
-print("\n------------------------------------------------------------\n");
+-- print("Class1.foo: " .. Class1.foo);
+-- print("Class3.foo: " .. Class3.foo);
+-- print("Class3Ins.foo: " .. Class3Ins.foo);
 
+-- print("\n");
+
+-- print("Class3 instanceOf Class1: " .. tostring(Class3:instanceOf(Class1)));
+-- print("Class1 instanceOf Class3: " .. tostring(Class1:instanceOf(Class3)));
+
+-- print("\n");
+
+-- print("Class3Ins instanceOf Class1Ins: " .. tostring(Class3Ins:instanceOf(Class1Ins)));
+-- print("Class1Ins instanceOf Class3Ins: " .. tostring(Class1Ins:instanceOf(Class3Ins)));
+
+-- print("\n");
+
+-- print("Class3Ins instanceOf Class1: " .. tostring(Class3Ins:instanceOf(Class1)));
+-- print("Class1 instanceOf Class3Ins: " .. tostring(Class1:instanceOf(Class3Ins)));
+
+-- print("\n------------------------------------------------------------\n");
+
+
+return Object;
