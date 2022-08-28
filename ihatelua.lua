@@ -108,6 +108,20 @@ end;
 local Object_DefaultMeta = {
     __tostring  = function(object) return string.format("[%s: %s]", Object.isClass(object) and "Class" or "Object", Object.type(object)) end;
     __concat    = function(prefix, object) return string.format("[%s%s]", prefix, tostring(object)) end;
+
+    ---@TODO Needs documenting.
+    __len       = function() error("__len not yet implemented.") end;
+    __pairs     = function() error("__len not yet implemented.") end;
+    __ipairs    = function() error("__ipairs not yet implemented.") end;
+    __gc        = function() error("__gc not yet implemented.") end;
+    __unm       = function() error("__unm not yet implemented.") end;
+    __add       = function() error("__add not yet implemented.") end;
+    __sub       = function() error("__sub not yet implemented.") end;
+    __mul       = function() error("__mul not yet implemented.") end;
+    __div       = function() error("__div not yet implemented.") end;
+    __idiv      = function() error("__idiv not yet implemented.") end;
+    __mod       = function() error("__mod not yet implemented.") end;
+    __pow       = function() error("__pow not yet implemented.") end;
 };
 
 for key,value in pairs(Object_DefaultMeta) do Object_Meta[key] = value end;
@@ -139,7 +153,7 @@ Object_MetaFactory.Class__newindex = function(class, key, value)
     if (key == 'super' or key == 'static') then error(string.format("Cannot assign reserved keyword '%s' in class '%s'.", key, Object.type(class)), 2) end;
 
     -- Set the constructor.
-    if (key == '__constructor') then
+    if (key == 'constructor') then
         if (type(value) ~= 'function') then error(string.format("Constructor for class '%s' must be a function. Actual type: '%s'.", Object.type(class), type(value))) end;
         getmetatable(class)['__constructor'] = value;
         return;
@@ -151,17 +165,18 @@ end;
 
 Object_MetaFactory.Class__call = function(class, ...)
     local newInstance, parentInstance = getmetatable(class)['__constructor'](class, ...);
+
     if (type(newInstance) ~= 'table') then error(string.format("Class constructor '%s' must return a table for value #1. Actual type: '%s'.", Object.type(class), type(newInstance)), 2) end;
     
     if (parentInstance ~= nil) then
         if (type(parentInstance) ~= 'table') then error(string.format("Class constructor '%s' must return a table or nil for value #2. Actual type: '%s'.", Object.type(class), type(parentInstance)), 2) end;
-        if (not (Object.id(parentInstance) and Object.isClass(parentInstance))) then error(string.format("The parent value returned in class constructor '%s' must extend Object and be an instance of a class."), 2) end;
+        if (Object.id(parentInstance) == nil or Object.isInstance(parentInstance) == false) then error(string.format("The parent value returned in class constructor '%s' must extend Object and be an instance of a class.", Object.type(class)), 2) end;
     end
 
     parentInstance = parentInstance or (class.super ~= Object and class.super(...) or nil);
     local instanceMeta = Object_MetaFactory.createInstance(class, parentInstance);
 
-    instanceMeta.__id = getTableID(parentInstance);
+    instanceMeta.__id = getTableID(newInstance);
     for key, value in pairs(getmetatable(class)['__iFields']) do newInstance[key] = value end; -- Copy all instance fields into the new instance table.
 
     return setmetatable(newInstance, instanceMeta);
@@ -185,7 +200,19 @@ function Object_MetaFactory.createClass(parent, name, meta)
         -- UserMeta -- -- -- --
         __tostring      = meta.__tostring or getmetatable(parent).__tostring;
         __concat        = meta.__concat or getmetatable(parent).__concat;
-        ---@TODO zug zug
+        
+        __len       = (meta and meta.__tostring) or getmetatable(parent)['__len'];
+        __pairs     = (meta and meta.__tostring) or getmetatable(parent)['__pairs'];
+        __ipairs    = (meta and meta.__tostring) or getmetatable(parent)['__ipairs'];
+        __gc        = (meta and meta.__tostring) or getmetatable(parent)['__gc'];
+        __unm       = (meta and meta.__tostring) or getmetatable(parent)['__unm'];
+        __add       = (meta and meta.__tostring) or getmetatable(parent)['__add'];
+        __sub       = (meta and meta.__tostring) or getmetatable(parent)['__sub'];
+        __mul       = (meta and meta.__tostring) or getmetatable(parent)['__mul'];
+        __div       = (meta and meta.__tostring) or getmetatable(parent)['__div'];
+        __idiv      = (meta and meta.__tostring) or getmetatable(parent)['__idiv'];
+        __mod       = (meta and meta.__tostring) or getmetatable(parent)['__mod'];
+        __pow       = (meta and meta.__tostring) or getmetatable(parent)['__pow'];
         -- -- -- -- -- -- -- --
 
         __index         = nil; -- Set during class initialisation.
@@ -206,8 +233,12 @@ Object_MetaFactory.Instance__index = function(instance, key)
     -- Crawl the inheritance chain, indexing each parent and its instance methods.
     instance = instance.super;
     while instance do
-        local iField = rawget(instance, key); if (iField) then return iField end; -- Check the instance for the field.
-        iMethod = getmetatable(instance.class)['__iMethods'][key]; if (iField) then return iField end; -- Check the class for instance methods.
+        local iField = rawget(instance, key);
+        if (iField) then return iField end; -- Check the instance for the field.
+
+        iMethod = getmetatable(instance.class)['__iMethods'][key];
+        if (iField) then return iField end; -- Check the class for instance methods.
+
         instance = instance.super;
     end;
 
@@ -245,7 +276,19 @@ function Object_MetaFactory.createInstance(parentClass, parentInstance)
         -- UserMeta -- -- -- --
         __tostring      = getmetatable(parentClass)['__tostring'];
         __concat        = getmetatable(parentClass)['__concat'];
-        ---@TODO zug zug
+
+        __len           = getmetatable(parentClass)['__len'];
+        __pairs         = getmetatable(parentClass)['__pairs'];
+        __ipairs        = getmetatable(parentClass)['__ipairs'];
+        __gc            = getmetatable(parentClass)['__gc'];
+        __unm           = getmetatable(parentClass)['__unm'];
+        __add           = getmetatable(parentClass)['__add'];
+        __sub           = getmetatable(parentClass)['__sub'];
+        __mul           = getmetatable(parentClass)['__mul'];
+        __div           = getmetatable(parentClass)['__div'];
+        __idiv          = getmetatable(parentClass)['__idiv'];
+        __mod           = getmetatable(parentClass)['__mod'];
+        __pow           = getmetatable(parentClass)['__pow'];
         -- -- -- -- -- -- -- --
 
         __index         = Object_MetaFactory.Instance__index;
@@ -255,6 +298,13 @@ end;
 
 ---------------------------------------------------------
 
+local NewClass1 = Object:Extend("NewClass1");
+local NewClass2 = NewClass1:Extend("NewClass2");
+function NewClass2:constructor() end;
+
+-- print("\n------------------------------------------------------------\n");
+-- print(inspect(NewClass2));
+-- print("\n------------------------------------------------------------\n");
 
 
 -- local Class1 = Object:Extend("");

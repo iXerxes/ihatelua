@@ -23,17 +23,17 @@ MyClass.static.foo2 = "bar2";
 
 
 -- Once defined, static fields & methods can be referenced directly without having to index 'static'.
-print(MyClass.foo1); -- >> "bar1"
+print(MyClass.foo1); -- >> bar1
 
 
 -- Classes will inherit any parent fields & methods that they extend from.
-print(MyOtherClass.foo2); -- >> "bar2"
+print(MyOtherClass.foo2); -- >> bar2
 
 
 -- New fields & methods will be written to the referenced class. Parent indexes will remain unaltered.
 MyOtherClass.static.foo1 = "overridden bar1";
-print(MyClass.foo1);        -- >> "bar1"
-print(MyOtherClass.foo1);   -- >> "overridden bar1"
+print(MyClass.foo1);        -- >> bar1
+print(MyOtherClass.foo1);   -- >> overridden bar1
 
 
 --- Static methods are defined and follow the same rules as fields.
@@ -60,8 +60,8 @@ local firstInstance = MyClass();
 firstInstance.color = "blue"
 local secondInstance = MyClass();
 
-print(firstInstance.color);     -- >> "blue"
-print(secondInstance.color);    -- >> "red"
+print(firstInstance.color);     -- >> blue
+print(secondInstance.color);    -- >> red
 
 --[[
 

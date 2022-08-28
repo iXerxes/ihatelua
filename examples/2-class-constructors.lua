@@ -1,3 +1,4 @@
+local inspect = function(root, depth) return require('inspect')(root, { indent = "   |", depth = depth }) end;
 local Object = require('ihatelua');
 
 ---------------------------------------------------------------------
@@ -15,7 +16,7 @@ local Object = require('ihatelua');
 
 -- Create a new class.
 local Person = Object:Extend("Person");
-local Employee = Object:Extend("Person");
+local Employee = Person:Extend("Employee");
 
 
 -- Typical Usage ----------------------------------------------------
@@ -39,8 +40,9 @@ end
 -- Returning only the instance body means the parent instance is automatically made by calling super(...).
 
 local newPerson, newEmployee = Person("Bob"), Employee("John", "Engineer");
-print("Hello, my name is .. " .. newPerson.name);
-print("Hello, my name is .. " .. newEmployee.name ". My job is: " .. newEmployee.job .. ".");
+
+print("Hello, my name is " .. newPerson.name);                                           -- >> Hello, my name is Bob
+print("Hello, my name is " .. newEmployee.name .. ". My job is: " .. newEmployee.job);   -- >> Hello, my name is John. My job is: Engineer
 
 ---------------------------------------------------------------------
 
@@ -50,22 +52,23 @@ print("Hello, my name is .. " .. newEmployee.name ". My job is: " .. newEmployee
 
 -- A second value can be returned if you want to have more control over the instance parent.
 
--- function Person:constructor(name)
---     local newPerson = {
---         name = name;
---     };
---     return newPerson;
--- end
+function Person:constructor(name)
+    local newPerson = {
+        name = name;
+    };
+    return newPerson;
+end
 
--- function Employee:constructor(name, job)
---     local newEmployee = {
---         job = job;
---     };
---     return newEmployee, self.super("[Employee] " .. name);
--- end
+function Employee:constructor(name, job)
+    local newEmployee = {
+        job = job;
+    };
+    return newEmployee, self.super("[Employee] " .. name);
+end
 
--- local newPerson, newEmployee = Person("Bob"), Employee("John", "Engineer");
--- print("Hello, my name is .. " .. newPerson.name);
--- print("Hello, my name is .. " .. newEmployee.name ". My job is: " .. newEmployee.job .. ".");
+local newPerson, newEmployee = Person("Bob"), Employee("John", "Engineer");
+
+print("Hello, my name is " .. newPerson.name);                                           -- >> Hello, my name is Bob
+print("Hello, my name is " .. newEmployee.name .. ". My job is: " .. newEmployee.job);   -- >> Hello, my name is [Employee] John. My job is: Engineer
 
 ---------------------------------------------------------------------
