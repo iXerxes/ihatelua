@@ -1,3 +1,6 @@
+-- WIP
+
+
 local Object = require('ihatelua');
 local inspect = function(root, depth) return require('inspect')(root, { indent = "   |", depth = depth }) end;
 
