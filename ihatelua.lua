@@ -201,18 +201,18 @@ function Object_MetaFactory.createClass(parent, name, meta)
         __tostring      = meta.__tostring or getmetatable(parent).__tostring;
         __concat        = meta.__concat or getmetatable(parent).__concat;
         
-        __len       = (meta and meta.__tostring) or getmetatable(parent)['__len'];
-        __pairs     = (meta and meta.__tostring) or getmetatable(parent)['__pairs'];
-        __ipairs    = (meta and meta.__tostring) or getmetatable(parent)['__ipairs'];
-        __gc        = (meta and meta.__tostring) or getmetatable(parent)['__gc'];
-        __unm       = (meta and meta.__tostring) or getmetatable(parent)['__unm'];
-        __add       = (meta and meta.__tostring) or getmetatable(parent)['__add'];
-        __sub       = (meta and meta.__tostring) or getmetatable(parent)['__sub'];
-        __mul       = (meta and meta.__tostring) or getmetatable(parent)['__mul'];
-        __div       = (meta and meta.__tostring) or getmetatable(parent)['__div'];
-        __idiv      = (meta and meta.__tostring) or getmetatable(parent)['__idiv'];
-        __mod       = (meta and meta.__tostring) or getmetatable(parent)['__mod'];
-        __pow       = (meta and meta.__tostring) or getmetatable(parent)['__pow'];
+        __len           = (meta and meta.__len)     or getmetatable(parent)['__len'];
+        __pairs         = (meta and meta.__pairs)   or getmetatable(parent)['__pairs'];
+        __ipairs        = (meta and meta.__ipairs)  or getmetatable(parent)['__ipairs'];
+        __gc            = (meta and meta.__gc)      or getmetatable(parent)['__gc'];
+        __unm           = (meta and meta.__unm)     or getmetatable(parent)['__unm'];
+        __add           = (meta and meta.__add)     or getmetatable(parent)['__add'];
+        __sub           = (meta and meta.__sub)     or getmetatable(parent)['__sub'];
+        __mul           = (meta and meta.__mul)     or getmetatable(parent)['__mul'];
+        __div           = (meta and meta.__div)     or getmetatable(parent)['__div'];
+        __idiv          = (meta and meta.__idiv)    or getmetatable(parent)['__idiv'];
+        __mod           = (meta and meta.__mod)     or getmetatable(parent)['__mod'];
+        __pow           = (meta and meta.__pow)     or getmetatable(parent)['__pow'];
         -- -- -- -- -- -- -- --
 
         __index         = nil; -- Set during class initialisation.
